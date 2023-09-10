@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split, cross_val_score
 
 from sklearn.metrics import make_scorer, f1_score, accuracy_score
 #######################################################################################################################
-                                                # Section 1 - Data Transformation #
+# Section 1 - Data Transformation #
 #######################################################################################################################
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
@@ -66,12 +66,13 @@ def data_transformation(X, transformation_type):
 
 
 #######################################################################################################################
-                                                # Section 2 - Feature Selection #
+# Section 2 - Feature Selection #
 #######################################################################################################################
 from boruta import BorutaPy
 from sklearn.feature_selection import SelectFromModel
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Function for dimensionality reduction with Boruta
@@ -124,7 +125,7 @@ def boruta_selector(X, y):
     )
 
     # Fit Boruta with grid search on the data
-    grid_search.fit(X, y)
+    grid_search.fit(X.values, y.values)
 
     # Get selected features mask
     selected_features_mask = grid_search.best_estimator_.support_
@@ -133,9 +134,6 @@ def boruta_selector(X, y):
     X_selected = X.loc[:, selected_features_mask]
 
     return X_selected
-
-
-
 
 
 def rf_selector(X, y):
@@ -166,7 +164,7 @@ def rf_selector(X, y):
     rf_selector = RandomForestClassifier()
 
     # Fit the classifier to the data to calculate feature importances
-    rf_selector.fit(X, y)
+    rf_selector.fit(X.values, y.values)
 
     # Create a GridSearchCV object
     grid_search = GridSearchCV(
@@ -177,7 +175,7 @@ def rf_selector(X, y):
         # n_jobs=-1  # Use all available CPU cores for parallelism
     )
 
-    grid_search.fit(X, y)
+    grid_search.fit(X.values, y.values)
 
     # Get the best estimator with the best hyperparameters
     best_rf = grid_search.best_estimator_
@@ -190,7 +188,7 @@ def rf_selector(X, y):
     feature_selector = SelectFromModel(best_rf, threshold=-np.inf, max_features=num_features_to_select)
 
     # Transform the data to select the top features
-    feature_selector.fit(X, y)
+    feature_selector.fit(X.values, y.values)
     X_selected = feature_selector.transform(X)
 
     return X_selected
@@ -209,18 +207,16 @@ def data_reduction(X, y, reduction_type):
     - selected_features: Feature matrix with selected features.
     """
     if reduction_type == 'random_forest':
-        algorithm = rf_selector
+        X_selected = rf_selector(X, y)
     elif reduction_type == 'boruta':
-        algorithm = boruta_selector(X, y)
+        X_selected = boruta_selector(X, y)
     else:
         return X  # No reduction
-
-    X_selected = algorithm(X, y)
     return X_selected
 
 
 #######################################################################################################################
-                                                # Section 3 - Classification #
+# Section 3 - Classification #
 #######################################################################################################################
 from sklearn.tree import DecisionTreeClassifier
 
@@ -247,7 +243,7 @@ classify_dt_params = {
 }
 
 #######################################################################################################################
-                                                        # Main framework #
+# Main framework #
 #######################################################################################################################
 if __name__ == "__main__":
     """This script works by propagating X sets into a dictionary that also stores the processing steps it has undergone.
@@ -255,7 +251,7 @@ if __name__ == "__main__":
 
     # Load gene expression data
     data_path = "G1/G1_breast_gene-expr.csv"
-    X, y = hf.load_data(data_path)
+    X1, y = hf.load_data(data_path)
 
     X_sets_1, X_sets_2, X_sets_3 = {}, {}, {}
 
@@ -265,7 +261,7 @@ if __name__ == "__main__":
     combination_id = 0
     transformation_types = ['no_transformation', 'min-max', 'standardization', 'log2']
     for transform_type in transformation_types:
-        X_transformed = data_transformation(X, transform_type)
+        X_transformed = data_transformation(X1, transform_type)
         X_sets_1[combination_id] = [X_transformed, transform_type]
         combination_id += 1
 
@@ -277,15 +273,16 @@ if __name__ == "__main__":
         processing_steps = X_sets_1[id]
         X = processing_steps[0]
         for reduction_type in reduction_types:
+            processing_steps.append(reduction_type)
             X_reduced = data_reduction(X, y, reduction_type)
-            X_sets_2[combination_id] = processing_steps.append(reduction_type)
+            X_sets_2[combination_id] = processing_steps
             combination_id += 1
 
     # e.g. processing_steps=[X_dataframe, transformation_type, reduction_type, scores_list]
     # Load real test data - For Assignment purposes ONLY. Sorts and runs data imputation.
     real_data = "G1/mystery_gene-expr.csv"
     real_X, real_y = hf.load_data(real_data)
-    real_X = real_X[X.columns]
+    real_X = real_X[X1.columns]
     real_X = real_X.fillna(0)
 
     # Section 3: Classification with Random Forest and Decision Tree
@@ -314,8 +311,8 @@ if __name__ == "__main__":
         )
 
         # Fit and run all combinations with cross validation n=10
-        rf_grid_search.fit(X, y)
-        dt_grid_search.fit(X, y)
+        rf_grid_search.fit(X.values, y.values)
+        dt_grid_search.fit(X.values, y.values)
 
         # Get the best estimators with the best hyperparameters
         best_rf = rf_grid_search.best_estimator_
