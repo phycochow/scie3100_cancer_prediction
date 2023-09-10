@@ -121,7 +121,7 @@ def boruta_selector(X, y, boruta_params=boruta_params):
         param_grid=reduction_rf_params,
         cv=10,  # Number of cross-validation folds
         scoring=f1_score_positive,  # Measure with F1 score or accuracy
-        n_jobs=-1  # Use all available CPU cores for parallelism
+        # n_jobs=-1  # Use all available CPU cores for parallelism
     )
 
     # Fit Boruta with grid search on the data
@@ -173,7 +173,7 @@ def rf_selector(X, y, reduction_rf_params=reduction_rf_params):
         param_grid=reduction_rf_params,
         cv=10,  # Number of cross-validation folds
         scoring=f1_score_positive,  # Measure with F1 score or accuracy
-        n_jobs=-1  # Use all available CPU cores for parallelism
+        # n_jobs=-1  # Use all available CPU cores for parallelism
     )
 
     grid_search.fit(X, y)
@@ -189,6 +189,7 @@ def rf_selector(X, y, reduction_rf_params=reduction_rf_params):
     feature_selector = SelectFromModel(best_rf, threshold=-np.inf, max_features=num_features_to_select)
 
     # Transform the data to select the top features
+    feature_selector.fit(X, y)
     X_selected = feature_selector.transform(X)
 
     return X_selected
@@ -258,6 +259,7 @@ if __name__ == "__main__":
     X_sets_1, X_sets_2, X_sets_3 = {}, {}, {}
 
     # Section 1: Data Transformation
+    print('-------------------------------------------\nTransforming data\n-------------------------------------------')
     # Notes: Can store processing_steps as list instead of dictionary - update it later
     combination_id = 0
     transformation_types = ['no_transformation', 'min-max', 'standardization', 'log2']
@@ -267,6 +269,7 @@ if __name__ == "__main__":
         combination_id += 1
 
     # Section 2: Dimensionality Reduction with Boruta
+    print('-------------------------------------------\nReducing data\n-------------------------------------------')
     combination_id = 0
     reduction_types = ['no_reduction', 'random_forest', 'boruta']
     for id in X_sets_1:
@@ -285,9 +288,9 @@ if __name__ == "__main__":
     real_X = real_X.fillna(0)
 
     # Section 3: Classification with Random Forest and Decision Tree
+    print('-------------------------------------------\nClassifying data\n-------------------------------------------')
     rf_classifier = RandomForestClassifier()
     dt_classifier = DecisionTreeClassifier()
-    f1_score_positive = make_scorer(f1_score, pos_label='Primary Tumor')
 
     combination_id = 0
     for _id, processing_steps in X_sets_2.items():
@@ -298,7 +301,7 @@ if __name__ == "__main__":
             param_grid=classify_rf_params,
             cv=10,  # Number of cross-validation folds
             scoring=f1_score_positive,  # Measure with F1 score or accuracy
-            n_jobs=-1  # Use all available CPU cores for parallelism
+            # n_jobs=-1  # Use all available CPU cores for parallelism
         )
 
         dt_grid_search = GridSearchCV(
@@ -306,7 +309,7 @@ if __name__ == "__main__":
             param_grid=classify_dt_params,
             cv=10,  # Number of cross-validation folds
             scoring=f1_score_positive,  # Measure with F1 score or accuracy
-            n_jobs=-1  # Use all available CPU cores for parallelism
+            # n_jobs=-1  # Use all available CPU cores for parallelism
         )
 
         # Fit and run all combinations with cross validation n=10
