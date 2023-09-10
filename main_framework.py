@@ -74,22 +74,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Special thanks to Wilson
-boruta_params = {
-    'n_estimators': [100, 200, 300],  # Number of trees in the Random Forest
-    'max_depth': [10, 20, 30, 40, 50],  # Maximum depth of the trees
-    'random_state': [42],  # Random state for reproducibility (seed)
-    'verbose': [1],  # Set to 0 for no output during fitting
-    # 'min_samples_split': [2, 5, 10],
-    # 'min_samples_leaf': [1, 2, 4],
-    # 'max_features': ['auto', 'sqrt', 'log2'],
-    # 'bootstrap': [True, False],
-    # 'class_weight': [None, 'balanced']
-}
-
-
 # Function for dimensionality reduction with Boruta
-def boruta_selector(X, y, boruta_params=boruta_params):
+def boruta_selector(X, y):
     """
     Perform dimensionality reduction using the Boruta algorithm.
 
@@ -101,6 +87,19 @@ def boruta_selector(X, y, boruta_params=boruta_params):
     Returns:
     - X_selected: Feature matrix with selected features.
     """
+    # Special thanks to Wilson
+    boruta_params = {
+        'n_estimators': [100, 200, 300],  # Number of trees in the Random Forest
+        'max_depth': [10, 20, 30, 40, 50],  # Maximum depth of the trees
+        'random_state': [42],  # Random state for reproducibility (seed)
+        'verbose': [1],  # Set to 0 for no output during fitting
+        # 'min_samples_split': [2, 5, 10],
+        # 'min_samples_leaf': [1, 2, 4],
+        # 'max_features': ['auto', 'sqrt', 'log2'],
+        # 'bootstrap': [True, False],
+        # 'class_weight': [None, 'balanced']
+    }
+
     # Create a random forest classifier
     forest = RandomForestClassifier()
 
@@ -136,20 +135,10 @@ def boruta_selector(X, y, boruta_params=boruta_params):
     return X_selected
 
 
-reduction_rf_params = {
-    'n_estimators': [100, 200, 300],
-    'max_depth': [10, 20, 30, 40, 50],
-    'random_state': [42],  # Random state for reproducibility (seed)
-    'verbose': [1],
-    # 'min_samples_split': [2, 5, 10],
-    # 'min_samples_leaf': [1, 2, 4],
-    # 'max_features': ['auto', 'sqrt', 'log2'],
-    # 'bootstrap': [True, False],
-    # 'class_weight': [None, 'balanced']
-}
 
 
-def rf_selector(X, y, reduction_rf_params=reduction_rf_params):
+
+def rf_selector(X, y):
     """
     Perform dimensionality reduction using Random Forest feature importances.
 
@@ -161,6 +150,18 @@ def rf_selector(X, y, reduction_rf_params=reduction_rf_params):
     Returns:
     - X_selected: Feature matrix with selected features.
     """
+    reduction_rf_params = {
+        'n_estimators': [100, 200, 300],
+        'max_depth': [10, 20, 30, 40, 50],
+        'random_state': [42],  # Random state for reproducibility (seed)
+        'verbose': [1],
+        # 'min_samples_split': [2, 5, 10],
+        # 'min_samples_leaf': [1, 2, 4],
+        # 'max_features': ['auto', 'sqrt', 'log2'],
+        # 'bootstrap': [True, False],
+        # 'class_weight': [None, 'balanced']
+    }
+
     # Create a Random Forest classifier
     rf_selector = RandomForestClassifier()
 
@@ -210,7 +211,7 @@ def data_reduction(X, y, reduction_type):
     if reduction_type == 'random_forest':
         algorithm = rf_selector
     elif reduction_type == 'boruta':
-        algorithm = boruta_selector
+        algorithm = boruta_selector(X, y)
     else:
         return X  # No reduction
 
