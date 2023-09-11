@@ -9,7 +9,7 @@ import helper_functions as hf
 
 # Import necessary modules
 import numpy as np
-
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, cross_val_score
 
@@ -31,13 +31,13 @@ def data_transformation(X, transformation_type):
     elif transformation_type == 'standardization':
         scaler = StandardScaler()
     elif transformation_type == 'log2':
-        X = np.log2(X + 1)  # Add 1 to avoid log(0)
+        X = pd.DataFrame(np.log2(X + 1))  # Add 1 to avoid log(0)
         return X
     else:
         return X  # No transformation
 
     # Apply the selected transformation
-    X_transformed = scaler.fit_transform(X)
+    X_transformed = scaler.fit_transform(X.values)
     return X_transformed
 
 
@@ -81,8 +81,8 @@ def boruta_selector(X, y):
     Perform dimensionality reduction using the Boruta algorithm.
 
     Parameters:
-    - X: Feature matrix (numpy array or pandas DataFrame).
-    - y: Target variable (numpy array or pandas Series).
+    - X: Feature matrix (pandas DataFrame).
+    - y: Target variable (pandas Series).
     - boruta_params: Dictionary of hyperparameters for Boruta.
 
     Returns:
@@ -103,36 +103,38 @@ def boruta_selector(X, y):
 
     # Create a random forest classifier
     forest = RandomForestClassifier()
+    forest.fit(X.values, y.values)
 
     # Initialize Boruta
     boruta_rf = BorutaPy(forest, n_estimators='auto', random_state=42)
+    boruta_rf.fit(X.values, y.values)
 
-    # Passes through the random forest params from the boruta params into the boruta's random forest estimator
-    reduction_rf_params = {
-        'estimator__n_estimators': boruta_params['n_estimators'],
-        'estimator__max_depth': boruta_params['max_depth'],
-        'estimator__random_state': boruta_params['random_state'],
-        'verbose': boruta_params['verbose']
-    }
+    # # Passes through the random forest params from the boruta params into the boruta's random forest estimator
+    # reduction_rf_params = {
+    #     'estimator__n_estimators': boruta_params['n_estimators'],
+    #     'estimator__max_depth': boruta_params['max_depth'],
+    #     'estimator__random_state': boruta_params['random_state'],
+    #     'verbose': boruta_params['verbose']
+    # }
+    #
+    # # Create a GridSearchCV object
+    # grid_search = GridSearchCV(
+    #     estimator=boruta_rf,
+    #     param_grid=reduction_rf_params,
+    #     cv=10,  # Number of cross-validation folds
+    #     scoring=f1_score_positive,  # Measure with F1 score or accuracy
+    #     # n_jobs=-1  # Use all available CPU cores for parallelism
+    # )
 
-    # Create a GridSearchCV object
-    grid_search = GridSearchCV(
-        estimator=boruta_rf,
-        param_grid=reduction_rf_params,
-        cv=10,  # Number of cross-validation folds
-        scoring=f1_score_positive,  # Measure with F1 score or accuracy
-        # n_jobs=-1  # Use all available CPU cores for parallelism
-    )
-
-    # Fit Boruta with grid search on the data
-    grid_search.fit(X.values, y.values)
-
-    # Get selected features mask
-    selected_features_mask = grid_search.best_estimator_.support_
+    # # Fit Boruta with grid search on the data
+    # grid_search.fit(X.values, y.values)
+    #
+    # # Get selected features mask
+    # selected_features_mask = grid_search.best_estimator_.support_
 
     # Create a feature matrix with the selected features
-    X_selected = X.loc[:, selected_features_mask]
-
+    # X_selected = X.loc[:, selected_features_mask]
+    X_selected = boruta_rf.transform(X.values)
     return X_selected
 
 
@@ -189,7 +191,7 @@ def rf_selector(X, y):
 
     # Transform the data to select the top features
     feature_selector.fit(X.values, y.values)
-    X_selected = feature_selector.transform(X)
+    X_selected = pd.DataFrame(feature_selector.transform(X.values))
 
     return X_selected
 
@@ -273,9 +275,10 @@ if __name__ == "__main__":
         processing_steps = X_sets_1[id]
         X = processing_steps[0]
         for reduction_type in reduction_types:
-            processing_steps.append(reduction_type)
+            new_processing_steps = processing_steps
+            new_processing_steps.append(reduction_type)
             X_reduced = data_reduction(X, y, reduction_type)
-            X_sets_2[combination_id] = processing_steps
+            X_sets_2[combination_id] = new_processing_steps
             combination_id += 1
 
     # e.g. processing_steps=[X_dataframe, transformation_type, reduction_type, scores_list]
