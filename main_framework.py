@@ -89,17 +89,17 @@ def boruta_selector(X, y):
     - X_selected: Feature matrix with selected features.
     """
     # Special thanks to Wilson
-    boruta_params = {
-        'n_estimators': [100, 200, 300],  # Number of trees in the Random Forest
-        'max_depth': [10, 20, 30, 40, 50],  # Maximum depth of the trees
-        'random_state': [42],  # Random state for reproducibility (seed)
-        'verbose': [1],  # Set to 0 for no output during fitting
-        # 'min_samples_split': [2, 5, 10],
-        # 'min_samples_leaf': [1, 2, 4],
-        # 'max_features': ['auto', 'sqrt', 'log2'],
-        # 'bootstrap': [True, False],
-        # 'class_weight': [None, 'balanced']
-    }
+    # boruta_params = {
+    #     'n_estimators': [100, 200, 300],  # Number of trees in the Random Forest
+    #     'max_depth': [10, 20, 30, 40, 50],  # Maximum depth of the trees
+    #     'random_state': [42],  # Random state for reproducibility (seed)
+    #     'verbose': [1],  # Set to 0 for no output during fitting
+    #     # 'min_samples_split': [2, 5, 10],
+    #     # 'min_samples_leaf': [1, 2, 4],
+    #     # 'max_features': ['auto', 'sqrt', 'log2'],
+    #     # 'bootstrap': [True, False],
+    #     # 'class_weight': [None, 'balanced']
+    # }
 
     # Create a random forest classifier
     forest = RandomForestClassifier()
@@ -151,8 +151,9 @@ def rf_selector(X, y):
     - X_selected: Feature matrix with selected features.
     """
     reduction_rf_params = {
-        'n_estimators': [100, 200, 300],
-        'max_depth': [10, 20, 30, 40, 50],
+        # 'n_estimators': [100, 200, 300],
+        'n_estimators': [100],
+        'max_depth': [30, 40, 50],
         'random_state': [42],  # Random state for reproducibility (seed)
         'verbose': [1],
         # 'min_samples_split': [2, 5, 10],
@@ -224,8 +225,10 @@ from sklearn.tree import DecisionTreeClassifier
 
 # -------------------------------------------Defining adjustable parameters-------------------------------------------
 classify_rf_params = {
-    'n_estimators': [100, 200, 300],
-    'max_depth': [10, 20, 30, 40, 50],
+    # 'n_estimators': [100, 200, 300],
+    # 'max_depth': [30, 40, 50],
+    'n_estimators': [100],
+    'max_depth': [50],
     'random_state': [42],  # Random state for reproducibility (seed)
     'verbose': [1],
     # 'min_samples_split': [2, 5, 10],
@@ -263,6 +266,7 @@ if __name__ == "__main__":
     combination_id = 0
     transformation_types = ['no_transformation', 'min-max', 'standardization', 'log2']
     for transform_type in transformation_types:
+        print(f'---------------------------------------\n{transform_type}\n---------------------------------------')
         X_transformed = data_transformation(X1, transform_type)
         X_sets_1[combination_id] = [X_transformed, transform_type]
         combination_id += 1
@@ -275,6 +279,7 @@ if __name__ == "__main__":
         processing_steps = X_sets_1[id]
         X = processing_steps[0]
         for reduction_type in reduction_types:
+            print(f'---------------------------------------\n{reduction_type}\n---------------------------------------')
             new_processing_steps = processing_steps
             new_processing_steps.append(reduction_type)
             X_reduced = data_reduction(X, y, reduction_type)
