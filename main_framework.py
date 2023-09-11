@@ -37,7 +37,7 @@ def data_transformation(X, transformation_type):
         return X  # No transformation
 
     # Apply the selected transformation
-    X_transformed = scaler.fit_transform(X.values)
+    X_transformed = pd.DataFrame(scaler.fit_transform(X.values))
     return X_transformed
 
 
